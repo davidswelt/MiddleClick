@@ -57,11 +57,11 @@
 
 - (void)setChecks
 {
-
 	[singleTapItem setState:(myController->tap1Type==SINGLE_CLICK?NSOnState:NSOffState)];
 	[tapItem setState:(myController->tap3Type==MIDDLE_CLICK?NSOnState:NSOffState)];
-	[doubleClickItem setState:(myController->click3Type==DOUBLE_CLICK?NSOnState:NSOffState)];
 	[doubleTapItem setState:(myController->tap3Type==DOUBLE_CLICK?NSOnState:NSOffState)];
+	[clickItem setState:(myController->click3Type==MIDDLE_CLICK?NSOnState:NSOffState)];
+	[doubleClickItem setState:(myController->click3Type==DOUBLE_CLICK?NSOnState:NSOffState)];
 }
 
 - (void) openFinder:(id)sender {
