@@ -11,6 +11,14 @@
 
 @interface Controller : NSObject {
 
+@public
+	
+	int tap1Type;
+	int tap3Type;
+	int click1Type;
+	int click3Type;
+	
+	
 }
 
 typedef struct { float x,y; } mtPoint;
@@ -42,13 +50,21 @@ float middleclickX, middleclickY;
 float middleclickX2, middleclickY2;
 MTDeviceRef dev;
 
-BOOL needToClick;
-BOOL maybeMiddleClick;
-BOOL pressed;
+#define SINGLE_CLICK 10
+#define DOUBLE_CLICK 12
+#define MIDDLE_CLICK 30
+#define NO_CLICK 0
+
+Controller *callbackController;
 
 int callback(int device, Finger *data, int nFingers, double timestamp, int frame);
 - (void) start;
-- (void)setMode:(BOOL)click;
-- (BOOL)getClickMode;
+
+- (void)setTap1Type:(int)type;
+- (void)setTap3Type:(int)type;
+- (void)setClick1Type:(int)type;
+- (void)setClick3Type:(int)type;
+- (void) sendClickInputType:(int) type;
+- (void) executeClickType:(BOOL) clicked  withFingers:(int) numFingers;
 
 @end

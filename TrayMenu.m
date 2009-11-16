@@ -23,29 +23,45 @@
 	//[url release];
 }
 
-- (void)setClick:(id)sender
+- (void)setSingleTap:(id)sender
 {
-	[myController setMode:YES];
+	[myController setTap1Type:singleTapItem.state==NSOffState?SINGLE_CLICK:NO_CLICK];
 	[self setChecks];
 }
 
-- (void)setTap:(id)sender
+- (void)set3TapMiddle:(id)sender
 {
-	[myController setMode:NO];
+	[myController setTap3Type:tapItem.state==NSOffState?MIDDLE_CLICK:NO_CLICK];
 	[self setChecks];
 }
+
+- (void)set3TapDouble:(id)sender
+{
+	[myController setTap3Type:doubleTapItem.state==NSOffState?DOUBLE_CLICK:NO_CLICK];
+	[self setChecks];
+}
+
+- (void)set3ClickMiddle:(id)sender
+{
+	[myController setClick3Type:clickItem.state==NSOffState?MIDDLE_CLICK:NO_CLICK];
+	[self setChecks];
+}
+
+- (void)set3ClickDouble:(id)sender
+{
+	[myController setClick3Type:doubleClickItem.state==NSOffState?DOUBLE_CLICK:NO_CLICK];
+	[self setChecks];
+}
+ 
+
 
 - (void)setChecks
 {
-	if([myController getClickMode])
-	{
-		[clickItem setState:NSOnState];
-		[tapItem setState:NSOffState];
-	}
-	else {
-		[clickItem setState:NSOffState];
-		[tapItem setState:NSOnState];
-	}
+
+	[singleTapItem setState:(myController->tap1Type==SINGLE_CLICK?NSOnState:NSOffState)];
+	[tapItem setState:(myController->tap3Type==MIDDLE_CLICK?NSOnState:NSOffState)];
+	[doubleClickItem setState:(myController->click3Type==DOUBLE_CLICK?NSOnState:NSOffState)];
+	[doubleTapItem setState:(myController->tap3Type==DOUBLE_CLICK?NSOnState:NSOffState)];
 }
 
 - (void) openFinder:(id)sender {
@@ -67,11 +83,20 @@
 						keyEquivalent:@""];
 	[menuItem setTarget:self];
 	
-	clickItem = [menu addItemWithTitle:@"3 Finger Click" action:@selector(setClick:) keyEquivalent:@""];
-	[clickItem setTarget:self];
 	
-	tapItem = [menu addItemWithTitle:@"3 Finger Tap" action:@selector(setTap:) keyEquivalent:@""];
+	singleTapItem = [menu addItemWithTitle:@"Single Finger Tap for Left Click" action:@selector(setSingleTap:) keyEquivalent:@""];
+	[singleTapItem setTarget:self];
+	
+	clickItem = [menu addItemWithTitle:@"3 Finger Click: middle" action:@selector(set3ClickMiddle:) keyEquivalent:@""];
+	[clickItem setTarget:self];
+	doubleClickItem = [menu addItemWithTitle:@"3 Finger Click: double" action:@selector(set3ClickDouble:) keyEquivalent:@""];
+	[doubleClickItem setTarget:self];
+	
+	tapItem = [menu addItemWithTitle:@"3 Finger Tap: middle" action:@selector(set3TapMiddle:) keyEquivalent:@""];
 	[tapItem setTarget:self];
+	doubleTapItem = [menu addItemWithTitle:@"3 Finger Tap: double" action:@selector(set3TapDouble:) keyEquivalent:@""];
+	[doubleTapItem setTarget:self];
+
 	[self setChecks];
 	
 	// Add Separator

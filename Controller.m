@@ -22,8 +22,13 @@
 
 - (void) start
 {
-	pressed = NO;
-	needToClick = NO;
+	callbackController =  self;
+	//pressed = NO;
+	tap1Type = SINGLE_CLICK;
+	tap3Type = DOUBLE_CLICK;
+	click1Type = NO_CLICK;
+	click3Type = MIDDLE_CLICK;
+	
 	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];	
     [NSApplication sharedApplication];
 	
@@ -55,20 +60,98 @@
 
 - (BOOL)getClickMode
 {
-	return needToClick;
+return false;
+} 
+
+- (void)setTap1Type:(int)type
+{
+	tap1Type = type;
+}
+- (void)setTap3Type:(int)type
+{
+	tap3Type = type;
+}
+- (void)setClick1Type:(int)type
+{
+	click1Type = type;
+}
+- (void)setClick3Type:(int)type
+{
+	click3Type = type;
 }
 
-- (void)setMode:(BOOL)click
+
+void PostMouseEvent(CGMouseButton button, CGEventType type, const CGPoint point, int clickCount)
 {
-	needToClick = click;
+    CGEventRef theEvent = CGEventCreateMouseEvent(NULL, type, point, button);
+    CGEventSetType(theEvent, type);
+	CGEventSetIntegerValueField(theEvent, kCGMouseEventClickState, clickCount);
+    CGEventPost(kCGHIDEventTap, theEvent);
+    CFRelease(theEvent);
 }
+
+- (void) sendClickInputType:(int) type
+{
+	CGEventRef ourEvent = CGEventCreate(NULL);
+	CGPoint ourLoc = CGEventGetLocation(ourEvent);
+	switch (type)
+	{
+	case SINGLE_CLICK:
+			
+			PostMouseEvent(   kCGMouseButtonLeft, kCGEventLeftMouseDown, ourLoc, 1);
+			PostMouseEvent(   kCGMouseButtonLeft, kCGEventLeftMouseUp, ourLoc, 1);
+			break;
+	case MIDDLE_CLICK:
+		// Real middle click
+		CGPostMouseEvent( ourLoc, 1, 3, 0, 0, 1);
+		CGPostMouseEvent( ourLoc, 1, 3, 0, 0, 0);
+			break;
+	case DOUBLE_CLICK:
+		PostMouseEvent(   kCGMouseButtonLeft, kCGEventLeftMouseDown, ourLoc, 2);
+		PostMouseEvent(   kCGMouseButtonLeft, kCGEventLeftMouseUp, ourLoc, 2);
+//		PostMouseEvent(   kCGMouseButtonLeft, kCGEventLeftMouseDown, ourLoc, 2);
+//		PostMouseEvent(   kCGMouseButtonLeft, kCGEventLeftMouseUp, ourLoc, 2);
+			break;
+	case NO_CLICK:
+		break;
+	}
+}
+
+- (void) executeClickType:(BOOL) clicked  withFingers:(int) numFingers
+{
+
+	if (numFingers == 1)
+	{
+		if (clicked)
+			[self sendClickInputType:click1Type];
+		else
+			[self sendClickInputType: tap1Type];
+			
+	} else {
+
+		if (clicked)
+			[self sendClickInputType: click3Type];
+		else
+			[self sendClickInputType: tap3Type];
+	}
+}
+
 
 int callback(int device, Finger *data, int nFingers, double timestamp, int frame) {
+
+	
+	static BOOL maybeMiddleClick = NO;
+	static BOOL pressed = NO;
+	static int nFingersUsed = 0;
+	static CGPoint touchStartLoc;
+	
 	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];	
 	
-	if(needToClick)
+	if(pressed)
 	{
-		
+		[callbackController executeClickType: YES withFingers: nFingers==3?3:1];
+
+		/*		
 		if(nFingers == 3)
 		{
 			if(!pressed)
@@ -85,19 +168,27 @@ int callback(int device, Finger *data, int nFingers, double timestamp, int frame
 				pressed = NO;
 			}
 		}
+	  */
 	}
 	else 
+	 
 	{
+		
+		/* let's recognize numFingers not as absolute number, but by the difference in Fingers
+		 i.e. let them move mouse with two fingers and tap with a third */
+		
+		// get the current pointer location
+		CGEventRef ourEvent = CGEventCreate(NULL);
+		CGPoint ourLoc = CGEventGetLocation(ourEvent);
 		if (nFingers==0){
-			touchStartTime = NULL;
 			if(middleclickX+middleclickY) {
+				
 				float delta = ABS(middleclickX-middleclickX2)+ABS(middleclickY-middleclickY2); 
-				if (delta < 0.4f) {
-					// Emulate a middle click
+				float deltaLoc = ABS(touchStartLoc.x - ourLoc.x)+ABS(touchStartLoc.y - ourLoc.y);
+				if (delta < 0.4f && deltaLoc < 10 && -[touchStartTime timeIntervalSinceNow]<0.3f) {
+					// Emulate a middle or left click
 					
-					// get the current pointer location
-					CGEventRef ourEvent = CGEventCreate(NULL);
-					CGPoint ourLoc = CGEventGetLocation(ourEvent);
+
 					
 					/*
 					 // CMD+Click code
@@ -107,12 +198,25 @@ int callback(int device, Finger *data, int nFingers, double timestamp, int frame
 					 CGPostKeyboardEvent( (CGCharCode)0, (CGKeyCode)55, false );
 					 */
 					
-					// Real middle click
-					CGPostMouseEvent( ourLoc, 1, 3, 0, 0, 1);
-					CGPostMouseEvent( ourLoc, 1, 3, 0, 0, 0);
-					
+					if (nFingersUsed == 1 )
+					{
+						if (ABS(middleclickX-middleclickX2)<2 && ABS(middleclickY-middleclickY2)<2)
+						{
+							[callbackController executeClickType: pressed withFingers:1];
+							maybeMiddleClick = NO;
+							middleclickX = 0.0f;
+							middleclickY = 0.0f;
+							touchStartTime = NULL;	
+						}
+					}
+					else {
+						[callbackController executeClickType: pressed withFingers: 3];
+
+					}
 				}
 			}
+			touchStartTime = NULL;
+			maybeMiddleClick = NO;	
 			
 		} else if (nFingers>0 && touchStartTime == NULL){		
 			NSDate *now = [[NSDate alloc] init];
@@ -122,6 +226,8 @@ int callback(int device, Finger *data, int nFingers, double timestamp, int frame
 			maybeMiddleClick = YES;
 			middleclickX = 0.0f;
 			middleclickY = 0.0f;
+			nFingersUsed = nFingers;
+			touchStartLoc = ourLoc;
 		} else {
 			if (maybeMiddleClick==YES){
 				NSTimeInterval elapsedTime = -[touchStartTime timeIntervalSinceNow];  
@@ -150,6 +256,19 @@ int callback(int device, Finger *data, int nFingers, double timestamp, int frame
 			} else {
 				middleclickX2 = (f1->normalized.pos.x+f2->normalized.pos.x+f3->normalized.pos.x);
 				middleclickY2 = (f1->normalized.pos.y+f2->normalized.pos.y+f3->normalized.pos.y);
+			}
+		} else if (nFingers==1) {
+			Finger *f1 = &data[0];
+			
+			if (maybeMiddleClick==YES) {
+				middleclickX =  f1->normalized.pos.x;
+				middleclickY =  f1->normalized.pos.y;
+				middleclickX2 = middleclickX;
+				middleclickY2 = middleclickY;
+				maybeMiddleClick=NO;
+			} else {
+				middleclickX2 = f1->normalized.pos.x;
+				middleclickY2 = f1->normalized.pos.y;
 			}
 		}
 	}

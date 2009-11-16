@@ -14,9 +14,10 @@
 	Controller *myController;
 	NSMenuItem *tapItem;
 	NSMenuItem *clickItem;
+	NSMenuItem *singleTapItem;
+	NSMenuItem *doubleClickItem;
+	NSMenuItem *doubleTapItem;
 }
 - (id)initWithController:(Controller *)ctrl;
 - (void)setChecks;
-- (void)setClick:(id)sender;
-- (void)setTap:(id)sender;
 @end
