@@ -32,6 +32,21 @@
 	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];	
     [NSApplication sharedApplication];
 	
+	//
+	
+	NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+
+    NSDictionary *appDefaults = [NSDictionary dictionaryWithObjectsAndKeys:
+								 [NSNumber numberWithInt:tap1Type], @"tap1Type",
+								 [NSNumber numberWithInt:tap3Type], @"tap3Type",
+								 [NSNumber numberWithInt:click1Type], @"click1Type",
+								 [NSNumber numberWithInt:click3Type], @"click3Type", nil];
+	[defaults registerDefaults:appDefaults];
+	tap1Type = [[NSUserDefaults standardUserDefaults] integerForKey:@"tap1Type"];
+	tap3Type = [[NSUserDefaults standardUserDefaults] integerForKey:@"tap3Type"];
+	click1Type = [[NSUserDefaults standardUserDefaults] integerForKey:@"click1Type"];
+	click3Type = [[NSUserDefaults standardUserDefaults] integerForKey:@"click3Type"];
+	
 	
 	//Get list of all multi touch devices
 	NSMutableArray* deviceList = (NSMutableArray*)MTDeviceCreateList(); //grab our device list
@@ -55,6 +70,7 @@
     [NSApp setDelegate:menu];
     [NSApp run];
 	
+	
 	[pool release];
 }
 
@@ -66,18 +82,22 @@ return false;
 - (void)setTap1Type:(int)type
 {
 	tap1Type = type;
+	[[NSUserDefaults standardUserDefaults] setInteger:type forKey:@"tap1Type"];
 }
 - (void)setTap3Type:(int)type
 {
 	tap3Type = type;
+	[[NSUserDefaults standardUserDefaults] setInteger:type forKey:@"tap3Type"];
 }
 - (void)setClick1Type:(int)type
 {
 	click1Type = type;
+	[[NSUserDefaults standardUserDefaults] setInteger:type forKey:@"click1Type"];
 }
 - (void)setClick3Type:(int)type
 {
 	click3Type = type;
+	[[NSUserDefaults standardUserDefaults] setInteger:type forKey:@"click3Type"];
 }
 
 
